@@ -1,6 +1,6 @@
 # allow-hide-cm 参数功能分析报告
 
-## 概述
+## 概述         123
 `allow-hide-cm` 是 RustDesk 中用于控制是否隐藏连接管理窗口（Connection Management Window）的配置参数。
 
 ## 功能定位
