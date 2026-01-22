@@ -512,13 +512,13 @@ function check_update_ui() {
                 hide_cm = true;
             } else {
                 // 显示窗口
-                if (hide_cm == true && connections.length > 0) {
-                    // 隐藏窗口
-                    view.windowState = View.WINDOW_HIDDEN;
-                    hide_cm = true;
+               // if (hide_cm == true && connections.length > 0) {
+
                   //  view.windowState = View.WINDOW_SHOWN;
                   //  bring_to_top();
-                }
+               // }
+                  // 隐藏窗口
+                view.windowState = View.WINDOW_HIDDEN;
                 hide_cm = true;
                // hide_cm = false;
             }
