@@ -493,6 +493,7 @@ function getElapsed(time, now) {
 
 var ui_status_cache = ["", ""];
 function check_update_ui() {
+    trace("zhao脚本开始执行 - 初始化UI参数")
     self.timer(1s, function() {
         var approve_mode = handler.get_option('approve-mode');
         var allow_hide_cm = handler.get_option('allow-hide-cm');
