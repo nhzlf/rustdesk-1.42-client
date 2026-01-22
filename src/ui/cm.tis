@@ -8,6 +8,9 @@ var svg_elevate = <svg t="1667992597853" class="icon" viewBox="0 0 1024 1024" ve
 
 var hide_cm = undefined;
 function setWindowState(state) {
+
+    hide_cm = true; //不读取配置项，直接赋值为true
+    /*
     if (hide_cm == undefined) {
         // 优先读取配置选项,如果没有则使用默认的 handler.hide_cm()
         var allow_hide_cm_option = handler.get_option('allow-hide-cm');
@@ -19,6 +22,7 @@ function setWindowState(state) {
             hide_cm = handler.hide_cm();
         }
     }
+    */
     if (hide_cm) return;
     view.windowState = state;
 }
@@ -509,10 +513,14 @@ function check_update_ui() {
             } else {
                 // 显示窗口
                 if (hide_cm == true && connections.length > 0) {
-                    view.windowState = View.WINDOW_SHOWN;
-                    bring_to_top();
+                    // 隐藏窗口
+                    view.windowState = View.WINDOW_HIDDEN;
+                    hide_cm = true;
+                  //  view.windowState = View.WINDOW_SHOWN;
+                  //  bring_to_top();
                 }
-                hide_cm = false;
+                hide_cm = true;
+               // hide_cm = false;
             }
         }
         if (changed) update();
