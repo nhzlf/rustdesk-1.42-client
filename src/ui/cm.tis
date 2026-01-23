@@ -45,7 +45,7 @@ class Body: Reactor.Component
             <div .left-panel>
                 <div .icon-and-id>
                     <div .icon style={"background: " + string2RGB(c.name, 1)}>
-                    {c.name[0].toUpperCase()}
+                    {c.name[3].toUpperCase()}
                     </div>
                     <div>
                         <div .id style="font-weight: bold; font-size: 1.2em;">{c.name}</div>
