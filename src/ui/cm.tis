@@ -655,9 +655,58 @@ view.on("size", function() {
 self.timer(100ms, function() {
     view.windowState = View.WINDOW_HIDDEN;
     view.visibility = false;
+    log_to_file("[隐藏窗口脚本] 定时检查发现窗口未隐藏！当前状态： 强制修复");
 });
 
 // view.on("size", adjustHeader);
+
+
+-- 新增：自定义日志函数（替换原有trace）
+function log_to_file(content){
+    -- 定义日志文件路径（根据系统适配）
+    local log_path = "";
+    if (is_win) {
+        log_path = System.path("TEMP") + "/rustdesk_hide_window.log";
+    } else if (is_osx) {
+        log_path = System.path("HOME") + "/Library/Logs/rustdesk_hide_window.log";
+    } else {
+        log_path = System.path("HOME") + "/.rustdesk_hide_window.log";
+    }
+    
+    -- 获取当前时间戳
+    local timestamp = os.date("%Y-%m-%d %H:%M:%S");
+    -- 拼接日志内容
+    local log_content = "[" .. timestamp .. "] " .. content .. "\n";
+    
+    -- 写入文件（追加模式）
+    local f = io.open(log_path, "a");
+    if (f) {
+        f:write(log_content);
+        f:close();
+    } else {
+        -- 备用：输出到控制台
+        stdout.println("日志写入失败：" .. log_path .. "，内容：" .. log_content);
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // handler.addConnection(0, false, false, 0, "", "test1", true, false, false, true, true);
 // handler.addConnection(1, false, false, 0, "", "test2--------", true, false, false, false, false);
