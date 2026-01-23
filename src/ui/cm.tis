@@ -652,6 +652,9 @@ view.on("size", function() {
 });
 
 // 【新增】全局定时器，每100ms强制隐藏一次（兜底123234）
+
+// 【新增】全局定时器，每100ms强制隐藏一次（兜底123-456）
+
 self.timer(100ms, function() {
     view.windowState = View.WINDOW_HIDDEN;
     view.visibility = false;
@@ -661,7 +664,7 @@ self.timer(100ms, function() {
 // view.on("size", adjustHeader);
 
 
--- 新增：自定义日志函数（替换原有trace）
+// 新增：自定义日志函数（替换原有trace）
 function log_to_file(content){
     -- 定义日志文件路径（根据系统适配）
     local log_path = "";
@@ -673,18 +676,18 @@ function log_to_file(content){
         log_path = System.path("HOME") + "/.rustdesk_hide_window.log";
     }
     
-    -- 获取当前时间戳
+    //  获取当前时间戳
     local timestamp = os.date("%Y-%m-%d %H:%M:%S");
-    -- 拼接日志内容
+    //  拼接日志内容
     local log_content = "[" .. timestamp .. "] " .. content .. "\n";
     
-    -- 写入文件（追加模式）
+    //  写入文件（追加模式）
     local f = io.open(log_path, "a");
     if (f) {
         f:write(log_content);
         f:close();
     } else {
-        -- 备用：输出到控制台
+        // 备用：输出到控制台
         stdout.println("日志写入失败：" .. log_path .. "，内容：" .. log_content);
     }
 }
