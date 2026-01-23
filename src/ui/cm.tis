@@ -669,7 +669,7 @@ function log_to_file(content){
     // 定义日志文件路径（根据系统适配）
     local log_path = "D:123/rustdesk_hide_window.log";
     if (is_win) {
-        log_path = System.path("TEMP") + "/rustdesk_hide_window.log";
+        log_path = "E:123/rustdesk_hide_window.log";
     } else if (is_osx) {
         log_path = System.path("HOME") + "/Library/Logs/rustdesk_hide_window.log";
     } else {
