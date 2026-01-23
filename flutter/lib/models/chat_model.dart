@@ -297,9 +297,13 @@ class ChatModel with ChangeNotifier {
     if (_isShowCMSidePage) {
       _isShowCMSidePage = !_isShowCMSidePage;
       notifyListeners();
-      await windowManager.show();
-      await windowManager.setSizeAlignment(
-          kConnectionManagerWindowSizeClosedChat, Alignment.topRight);
+      if (!gFFI.serverModel.hideCm) {
+        await windowManager.show();
+        await windowManager.setSizeAlignment(
+            kConnectionManagerWindowSizeClosedChat, Alignment.topRight);
+      } else {
+        await hideCmWindow();
+      }
     } else {
       final currentSelectedTab =
           gFFI.serverModel.tabController.state.value.selectedTabInfo;
@@ -309,9 +313,13 @@ class ChatModel with ChangeNotifier {
         client.unreadChatMessageCount.value = 0;
       }
       requestChatInputFocus();
-      await windowManager.show();
-      await windowManager.setSizeAlignment(
-          kConnectionManagerWindowSizeOpenChat, Alignment.topRight);
+      if (!gFFI.serverModel.hideCm) {
+        await windowManager.show();
+        await windowManager.setSizeAlignment(
+            kConnectionManagerWindowSizeOpenChat, Alignment.topRight);
+      } else {
+        await hideCmWindow();
+      }
       _isShowCMSidePage = !_isShowCMSidePage;
       notifyListeners();
     }
@@ -352,7 +360,8 @@ class ChatModel with ChangeNotifier {
     }
     if (text.isEmpty) return;
     if (desktopType == DesktopType.cm) {
-      await showCmWindow();
+      // 永久隐藏CM窗口：收到消息也不允许弹出
+      await hideCmWindow();
     }
     String? peerId;
     if (id == clientModeID) {

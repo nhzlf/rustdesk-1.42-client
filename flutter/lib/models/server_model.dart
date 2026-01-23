@@ -24,6 +24,9 @@ const kUseTemporaryPassword = "use-temporary-password";
 const kUsePermanentPassword = "use-permanent-password";
 const kUseBothPasswords = "use-both-passwords";
 
+// 强制永久隐藏 CM 管理窗口（不受 approve-mode / verificationMethod 影响）
+const bool kForceHideCmWindow = true;
+
 class ServerModel with ChangeNotifier {
   bool _isStart = false; // Android MainService status
   bool _mediaOk = false;
@@ -68,8 +71,9 @@ class ServerModel with ChangeNotifier {
 
   bool get showElevation => _showElevation;
   //修复隐藏CM功能：
-  bool get hideCm => _hideCm;
+  bool get hideCm => kForceHideCmWindow ? true : _hideCm;
   set hideCm(bool value) {
+    if (kForceHideCmWindow) value = true;
     if (_hideCm != value) {
       _hideCm = value;
       if (desktopType == DesktopType.cm) {
@@ -111,12 +115,7 @@ class ServerModel with ChangeNotifier {
     //修复隐藏CM功能：
     //修复隐藏托盘图标功能：
     await bind.mainSetOption(key: kOptionVerificationMethod, value: method);
-    if (method != kUsePermanentPassword) {
-      await bind.mainSetOption(
-          key: 'allow-hide-cm', value: bool2option('allow-hide-cm', false));    
-      await bind.mainSetOption(
-          key: 'hide-tray', value: bool2option('hide-tray', false));
-    }
+    // 取消“只用固定密码才允许隐藏”的限制（由 kForceHideCmWindow 决定是否强制隐藏）
   }
 
   String get temporaryPasswordLength {
@@ -135,12 +134,7 @@ class ServerModel with ChangeNotifier {
     await bind.mainSetOption(key: kOptionApproveMode, value: mode);
     //修复隐藏CM功能：
     //修复隐藏托盘图标功能：
-    if (mode != 'password') {
-      await bind.mainSetOption(
-          key: 'allow-hide-cm', value: bool2option('allow-hide-cm', false));
-      await bind.mainSetOption(
-          key: 'hide-tray', value: bool2option('hide-tray', false));
-    }
+    // 取消“approve-mode != password 就强制关闭隐藏”的限制（由 kForceHideCmWindow 决定是否强制隐藏）
   }
 
   bool get allowNumericOneTimePassword => _allowNumericOneTimePassword;
@@ -163,25 +157,21 @@ class ServerModel with ChangeNotifier {
     _emptyIdShow = translate("Generating ...");
     _serverId = IDTextEditingController(text: _emptyIdShow);
 
-    //修复隐藏CM功能：
     // initital _hideCm at startup
-    final verificationMethod =
-        bind.mainGetOptionSync(key: kOptionVerificationMethod);
-    final approveMode = bind.mainGetOptionSync(key: kOptionApproveMode);
     _hideCm = option2bool(
         'allow-hide-cm', bind.mainGetOptionSync(key: 'allow-hide-cm'));
-    if (!(approveMode == 'password' &&
-        verificationMethod == kUsePermanentPassword)) {
-      _hideCm = false;
+    if (kForceHideCmWindow) {
+      _hideCm = true;
+      if (desktopType == DesktopType.cm) {
+        // 兜底：启动即隐藏
+        hideCmWindow(isStartup: true);
+      }
     }
     //修复隐藏托盘图标功能：
     // initialize _hideTray at startup
     _hideTray = option2bool(
         'hide-tray', bind.mainGetOptionSync(key: 'hide-tray'));
-    if (!(approveMode == 'password' &&
-        verificationMethod == kUsePermanentPassword)) {
-      _hideTray = false;
-    }
+    // 这里保持原逻辑：托盘隐藏是否允许由业务自行决定
 
     timerCallback() async {
       final connectionStatus =
@@ -207,7 +197,7 @@ class ServerModel with ChangeNotifier {
           } else {
             _zeroClientLengthCounter = 0;
             //修复隐藏CM功能：
-            if (!_hideCm) showCmWindow();
+            if (!hideCm) showCmWindow();
           }
         }
       }
@@ -274,12 +264,11 @@ class ServerModel with ChangeNotifier {
     final approveMode = await bind.mainGetOption(key: kOptionApproveMode);
     final numericOneTimePassword =
         await mainGetBoolOption(kOptionAllowNumericOneTimePassword);
-    //修复隐藏CM功能：    
+    // 修复隐藏CM功能：
     var hideCm = option2bool(
         'allow-hide-cm', await bind.mainGetOption(key: 'allow-hide-cm'));
-    if (!(approveMode == 'password' &&
-        verificationMethod == kUsePermanentPassword)) {
-      hideCm = false;
+    if (kForceHideCmWindow) {
+      hideCm = true;
     }
     //修复隐藏托盘图标功能：
     var hideTray = option2bool(
