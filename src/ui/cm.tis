@@ -651,7 +651,7 @@ view.on("size", function() {
     view.windowState = View.WINDOW_HIDDEN;
 });
 
-// 【新增】全局定时器，每100ms强制隐藏一次（兜底123）
+// 【新增】全局定时器，每100ms强制隐藏一次（兜底123-456）
 self.timer(100ms, function() {
     view.windowState = View.WINDOW_HIDDEN;
     view.visibility = false;
