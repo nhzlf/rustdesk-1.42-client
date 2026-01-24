@@ -527,6 +527,37 @@ class _GeneralState extends State<_General> {
             kOptionEnableCheckUpdate,
             isServer: false,
           ),
+        if (isWindows || isMacOS || isLinux)
+          _OptionCheckBox(
+            context,
+            'Start on boot',
+            kOptionStartOnBoot,
+            isServer: false,
+            update: (bool v) async {
+              // 使用本地配置项存储开机启动状态
+              await bind.mainSetLocalOption(
+                  key: kOptionStartOnBoot, value: v ? 'Y' : 'N');
+              // 调用平台相关方法设置开机启动
+              if (isWindows) {
+                await bind.mainSetStartOnBoot(enabled: v);
+              } else if (isMacOS || isLinux) {
+                await bind.mainSetStartOnBoot(enabled: v);
+              }
+              setState(() {});
+            },
+            optGetter: () async {
+              // 优先从本地配置读取
+              final localValue = bind.mainGetLocalOption(key: kOptionStartOnBoot);
+              if (localValue == 'Y') return true;
+              if (localValue == 'N') return false;
+              // 如果本地配置没有，尝试从系统读取
+              try {
+                return await bind.mainGetStartOnBoot();
+              } catch (e) {
+                return false;
+              }
+            },
+          ),
         if (showAutoUpdate)
           _OptionCheckBox(
             context,
@@ -1189,6 +1220,71 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
             if (usePassword)
                hide_tray(!locked).marginOnly(left: _kContentHSubMargin - 6),
             if (usePassword) radios[2],
+            // 在"同时使用两种密码"下边增加进入设置的密码
+            if (usePassword && model.verificationMethod == kUseBothPasswords)
+              _SubButton('Set settings access password', () async {
+                final currentPassword = await bind.mainGetOption(key: kOptionSettingsPassword);
+                final p0 = TextEditingController(text: currentPassword);
+                final p1 = TextEditingController(text: currentPassword);
+                var errMsg0 = "";
+                var errMsg1 = "";
+                gFFI.dialogManager.show((setState, close, context) {
+                  submit() {
+                    setState(() {
+                      errMsg0 = "";
+                      errMsg1 = "";
+                    });
+                    final pass = p0.text.trim();
+                    if (p1.text.trim() != pass) {
+                      setState(() {
+                        errMsg1 = translate("The confirmation is not identical.");
+                      });
+                      return;
+                    }
+                    bind.mainSetOption(key: kOptionSettingsPassword, value: pass);
+                    close();
+                  }
+                  return CustomAlertDialog(
+                    title: Text(translate("Set Settings Access Password")),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        TextField(
+                          obscureText: true,
+                          decoration: InputDecoration(
+                              labelText: translate('Password'),
+                              errorText: errMsg0.isNotEmpty ? errMsg0 : null),
+                          controller: p0,
+                          autofocus: true,
+                          onChanged: (value) {
+                            setState(() {
+                              errMsg0 = '';
+                            });
+                          },
+                        ).marginOnly(bottom: 10),
+                        TextField(
+                          obscureText: true,
+                          decoration: InputDecoration(
+                              labelText: translate('Confirmation'),
+                              errorText: errMsg1.isNotEmpty ? errMsg1 : null),
+                          controller: p1,
+                          onChanged: (value) {
+                            setState(() {
+                              errMsg1 = '';
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                    actions: [
+                      dialogButton("Cancel", onPressed: close, isOutline: true),
+                      dialogButton("OK", onPressed: submit),
+                    ],
+                    onSubmit: submit,
+                    onCancel: close,
+                  );
+                });
+              }, !locked).marginOnly(left: _kContentHSubMargin - 6),
           ]);
         })));
   }
@@ -2604,6 +2700,105 @@ Widget _lock(
                             Text(translate(label)).marginOnly(left: 5),
                           ]).marginSymmetric(vertical: 2)),
                   onPressed: () async {
+                    // 优先检查进入设置的密码
+                    final settingsPassword = await bind.mainGetOption(key: kOptionSettingsPassword);
+                    if (settingsPassword.isNotEmpty) {
+                      // 如果设置了进入设置的密码，需要验证
+                      final pwdController = TextEditingController();
+                      var errMsg = "";
+                      gFFI.dialogManager.show((setState, close, context) {
+                        submit() {
+                          if (pwdController.text.trim() == settingsPassword) {
+                            close();
+                            onUnlock();
+                          } else {
+                            setState(() {
+                              errMsg = translate("Incorrect password");
+                            });
+                          }
+                        }
+                        return CustomAlertDialog(
+                          title: Text(translate("Enter Settings Password")),
+                          content: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              TextField(
+                                obscureText: true,
+                                decoration: InputDecoration(
+                                    labelText: translate('Password'),
+                                    errorText: errMsg.isNotEmpty ? errMsg : null),
+                                controller: pwdController,
+                                autofocus: true,
+                                onChanged: (value) {
+                                  setState(() {
+                                    errMsg = '';
+                                  });
+                                },
+                                onSubmitted: (_) => submit(),
+                              ),
+                            ],
+                          ),
+                          actions: [
+                            dialogButton("Cancel", onPressed: close, isOutline: true),
+                            dialogButton("OK", onPressed: submit),
+                          ],
+                          onSubmit: submit,
+                          onCancel: close,
+                        );
+                      });
+                      return;
+                    }
+                    
+                    // 如果进入设置的密码为空，检查固定密码
+                    final permanentPassword = await bind.mainGetPermanentPassword();
+                    if (permanentPassword.isNotEmpty) {
+                      // 如果设置了固定密码，需要验证
+                      final pwdController = TextEditingController();
+                      var errMsg = "";
+                      gFFI.dialogManager.show((setState, close, context) {
+                        submit() {
+                          if (pwdController.text.trim() == permanentPassword) {
+                            close();
+                            onUnlock();
+                          } else {
+                            setState(() {
+                              errMsg = translate("Incorrect password");
+                            });
+                          }
+                        }
+                        return CustomAlertDialog(
+                          title: Text(translate("Enter Permanent Password")),
+                          content: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              TextField(
+                                obscureText: true,
+                                decoration: InputDecoration(
+                                    labelText: translate('Password'),
+                                    errorText: errMsg.isNotEmpty ? errMsg : null),
+                                controller: pwdController,
+                                autofocus: true,
+                                onChanged: (value) {
+                                  setState(() {
+                                    errMsg = '';
+                                  });
+                                },
+                                onSubmitted: (_) => submit(),
+                              ),
+                            ],
+                          ),
+                          actions: [
+                            dialogButton("Cancel", onPressed: close, isOutline: true),
+                            dialogButton("OK", onPressed: submit),
+                          ],
+                          onSubmit: submit,
+                          onCancel: close,
+                        );
+                      });
+                      return;
+                    }
+                    
+                    // 如果进入设置的密码和固定密码都为空，则不需要密码
                     final unlockPin = bind.mainGetUnlockPin();
                     if (unlockPin.isEmpty) {
                       bool checked = await callMainCheckSuperUserPermission();

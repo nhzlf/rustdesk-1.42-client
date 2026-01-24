@@ -329,63 +329,72 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                         fontSize: 14, color: textColor?.withOpacity(0.5)),
                     maxLines: 1,
                   ),
-                  Row(
+                  Stack(
                     children: [
-                      Expanded(
-                        child: GestureDetector(
-                          onDoubleTap: () {
-                            if (showOneTime) {
-                              Clipboard.setData(
-                                  ClipboardData(text: model.serverPasswd.text));
-                              showToast(translate("Copied"));
-                            }
-                          },
-                          child: TextFormField(
-                            controller: model.serverPasswd,
-                            readOnly: true,
-                            decoration: InputDecoration(
-                              border: InputBorder.none,
-                              contentPadding:
-                                  EdgeInsets.only(top: 14, bottom: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onDoubleTap: () {
+                                if (showOneTime) {
+                                  Clipboard.setData(
+                                      ClipboardData(text: model.serverPasswd.text));
+                                  showToast(translate("Copied"));
+                                }
+                              },
+                              child: TextFormField(
+                                controller: model.serverPasswd,
+                                readOnly: true,
+                                decoration: InputDecoration(
+                                  border: InputBorder.none,
+                                  contentPadding:
+                                      EdgeInsets.only(top: 14, bottom: 10),
+                                ),
+                                style: TextStyle(fontSize: 15),
+                              ).workaroundFreezeLinuxMint(),
                             ),
-                            style: TextStyle(fontSize: 15),
-                          ).workaroundFreezeLinuxMint(),
-                        ),
+                          ),
+                          if (showOneTime)
+                            AnimatedRotationWidget(
+                              onPressed: () => bind.mainUpdateTemporaryPassword(),
+                              child: Tooltip(
+                                message: translate('Refresh Password'),
+                                child: Obx(() => RotatedBox(
+                                    quarterTurns: 2,
+                                    child: Icon(
+                                      Icons.refresh,
+                                      color: refreshHover.value
+                                          ? textColor
+                                          : Color(0xFFDDDDDD),
+                                      size: 22,
+                                    ))),
+                              ),
+                              onHover: (value) => refreshHover.value = value,
+                            ).marginOnly(right: 8, top: 4),
+                        ],
                       ),
-                      if (showOneTime)
-                        AnimatedRotationWidget(
-                          onPressed: () => bind.mainUpdateTemporaryPassword(),
-                          child: Tooltip(
-                            message: translate('Refresh Password'),
-                            child: Obx(() => RotatedBox(
-                                quarterTurns: 2,
-                                child: Icon(
-                                  Icons.refresh,
-                                  color: refreshHover.value
-                                      ? textColor
-                                      : Color(0xFFDDDDDD),
-                                  size: 22,
-                                ))),
-                          ),
-                          onHover: (value) => refreshHover.value = value,
-                        ).marginOnly(right: 8, top: 4),
-                      if (!bind.isDisableSettings())   //删除一次性密码中的设置按钮向下18行
-                        InkWell(
-                          child: Tooltip(
-                            message: translate('Change Password'),
+                      // 将"更改密码"按钮移到密码下方重叠，去掉图标改为文本
+                      if (!bind.isDisableSettings())
+                        Positioned(
+                          bottom: 0,
+                          left: 0,
+                          child: InkWell(
+                            onTap: () => DesktopSettingPage.switch2page(
+                                SettingsTabKey.safety),
+                            onHover: (value) => editHover.value = value,
                             child: Obx(
-                              () => Icon(
-                                Icons.edit,
-                                color: editHover.value
-                                    ? textColor
-                                    : Color(0xFFDDDDDD),
-                                size: 22,
-                              ).marginOnly(right: 8, top: 4),
+                              () => Text(
+                                translate('Change Password'),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: editHover.value
+                                      ? textColor
+                                      : (textColor?.withOpacity(0.6) ?? Colors.grey),
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
                             ),
                           ),
-                          onTap: () => DesktopSettingPage.switch2page(
-                              SettingsTabKey.safety),
-                          onHover: (value) => editHover.value = value,
                         ),
                     ],
                   ),
