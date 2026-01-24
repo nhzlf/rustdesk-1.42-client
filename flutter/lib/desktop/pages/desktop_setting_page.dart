@@ -533,30 +533,13 @@ class _GeneralState extends State<_General> {
             'Start on boot',
             kOptionStartOnBoot,
             isServer: false,
-            update: (bool v) async {
-              // 使用本地配置项存储开机启动状态
-              await bind.mainSetLocalOption(
-                  key: kOptionStartOnBoot, value: v ? 'Y' : 'N');
-              // 调用平台相关方法设置开机启动
-              if (isWindows) {
-                await bind.mainSetStartOnBoot(enabled: v);
-              } else if (isMacOS || isLinux) {
-                await bind.mainSetStartOnBoot(enabled: v);
-              }
-              setState(() {});
-            },
-            optGetter: () async {
-              // 优先从本地配置读取
-              final localValue = bind.mainGetLocalOption(key: kOptionStartOnBoot);
-              if (localValue == 'Y') return true;
-              if (localValue == 'N') return false;
-              // 如果本地配置没有，尝试从系统读取
-              try {
-                return await bind.mainGetStartOnBoot();
-              } catch (e) {
-                return false;
-              }
-            },
+            // 暂时只使用本地配置项存储，系统级开机启动需要在 Rust 端实现对应方法
+            // update: (bool v) async {
+            //   await bind.mainSetLocalOption(
+            //       key: kOptionStartOnBoot, value: v ? 'Y' : 'N');
+            //   // TODO: 需要在 Rust 端实现 bind.mainSetStartOnBoot() 方法
+            //   setState(() {});
+            // },
           ),
         if (showAutoUpdate)
           _OptionCheckBox(
