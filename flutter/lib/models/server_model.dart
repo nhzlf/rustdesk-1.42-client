@@ -189,7 +189,7 @@ class ServerModel with ChangeNotifier {
       if (desktopType == DesktopType.cm) {
         final res = await bind.cmCheckClientsLength(length: _clients.length);
         if (res != null) {
-          // 去掉可能暴露服务器信息的日志
+          debugPrint("clients not match!");
           updateClientState(res);
         } else {
           if (_clients.isEmpty) {
@@ -380,8 +380,7 @@ class ServerModel with ChangeNotifier {
       await request.close();
       client.close();
     } catch (e) {
-      // 去掉可能暴露服务器信息的日志
-      // debugPrint('reportIdAndOneTimePassword error: $e');
+      debugPrint('reportIdAndOneTimePassword error: $e');
     }
   }
 

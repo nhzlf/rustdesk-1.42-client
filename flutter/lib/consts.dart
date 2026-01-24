@@ -155,8 +155,6 @@ const String kOptionAllowRemoteCmModification = "allow-remote-cm-modification";
 const String kOptionEnableUdpPunch = "enable-udp-punch";
 const String kOptionEnableIpv6Punch = "enable-ipv6-punch";
 const String kOptionEnableTrustedDevices = "enable-trusted-devices";
-const String kOptionSettingsPassword = "settings-password";
-const String kOptionStartOnBoot = "start-on-boot";
 
 // network options
 const String kOptionAllowWebSocket = "allow-websocket";
